@@ -11,23 +11,25 @@ import os
 import random
 import shutil
 import signal
+import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Optional
+from typing import Sequence
 
 try:
     from rich.console import Console
     from rich.panel import Panel
     from rich.text import Text
 except ImportError:
-    print("Installing rich...")
-    import subprocess
-
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "rich"])
-    from rich.console import Console
-    from rich.panel import Panel
-    from rich.text import Text
+    sys.stderr.write(
+        "Missing dependency 'rich'. Install it with:\n"
+        "  ./install.sh   (creates venv + installs deps)\n"
+        "  pip install rich\n"
+    )
+    sys.exit(2)
 
 
 class TerminalDock:
@@ -181,6 +183,8 @@ class CodeSnips:
         self.last_render_state = None
         self._previous_signal_handlers = {}
         self.pid_file: Optional[Path] = None
+        self.pause_on: list[str] = ["claude"]
+        self.pause_enabled = True
 
     def _load_snippets(self) -> dict:
         if not self.snippets_path.exists():
@@ -205,6 +209,50 @@ class CodeSnips:
             return os.ttyname(sys.stdout.fileno())
         except OSError:
             return None
+
+    def _foreground_cmdline(self) -> Optional[str]:
+        """Best-effort foreground process cmdline for this terminal.
+
+        Uses tcgetpgrp() and assumes the process group leader PID matches PGID,
+        which is true for typical shells and CLIs. Never reads stdin.
+        """
+        try:
+            fd = sys.stdout.fileno()
+            fg_pgrp = os.tcgetpgrp(fd)
+        except OSError:
+            return None
+
+        if fg_pgrp <= 0:
+            return None
+
+        cmdline_path = Path(f"/proc/{fg_pgrp}/cmdline")
+        try:
+            if not cmdline_path.exists():
+                return None
+            raw = cmdline_path.read_bytes()
+        except OSError:
+            return None
+
+        if not raw:
+            return None
+
+        # /proc/<pid>/cmdline is NUL-separated.
+        cmdline = raw.decode("utf-8", errors="replace").replace("\x00", " ").strip()
+        return cmdline or None
+
+    def _should_pause_dock(self) -> bool:
+        if not self.pause_enabled or not self.pause_on:
+            return False
+
+        cmdline = self._foreground_cmdline()
+        if not cmdline:
+            return False
+
+        lower = cmdline.lower()
+        for token in self.pause_on:
+            if token and token.lower() in lower:
+                return True
+        return False
 
     def _read_state(self, pid_file: Path) -> Optional[dict]:
         try:
@@ -327,9 +375,25 @@ class CodeSnips:
                 continue
 
             try:
+                try:
+                    cmdline_path = Path(f"/proc/{pid}/cmdline")
+                    if cmdline_path.exists():
+                        cmdline = cmdline_path.read_bytes().decode(
+                            "utf-8", errors="replace"
+                        )
+                        if "snips" not in cmdline:
+                            self.console.print(
+                                f"[yellow]PID {pid} is not a snips process (stale PID file). Cleaning up.[/yellow]"
+                            )
+                            pid_file.unlink(missing_ok=True)
+                            missing.append(pid_file)
+                            continue
+                except OSError:
+                    pass
+
                 os.kill(pid, signal.SIGTERM)
-                self._wait_for_pid_exit(pid)
-                self._collapse_terminal_space(state)
+                if self._wait_for_pid_exit(pid):
+                    self._collapse_terminal_space(state)
                 stopped.append(pid)
             except ProcessLookupError:
                 try:
@@ -462,11 +526,22 @@ class CodeSnips:
             signal.signal(sig, handler)
         self._previous_signal_handlers = {}
 
-    def run(self, interval: int = 30, clear: bool = True, dock: str = "top", height: int = 6):
+    def run(
+        self,
+        interval: int = 30,
+        clear: bool = True,
+        dock: str = "top",
+        height: int = 6,
+        pause_on: Optional[Sequence[str]] = None,
+        pause_enabled: bool = True,
+    ):
         interval = max(1, interval)
         self.stop_requested = False
         self.resize_requested = False
         self.last_render_state = None
+        self.pause_enabled = pause_enabled
+        if pause_on is not None:
+            self.pause_on = [t for t in pause_on if t]
 
         terminal_dock = TerminalDock(dock, height)
         dock_active = terminal_dock.activate()
@@ -481,6 +556,12 @@ class CodeSnips:
 
         try:
             while not self.stop_requested:
+                # If an "unsafe" foreground app is running (like Claude),
+                # pause refreshes so we don't corrupt its terminal UI/output.
+                if dock_active and self._should_pause_dock():
+                    time.sleep(0.5)
+                    continue
+
                 snippet_data = self._resolve_snippet()
                 if snippet_data is None:
                     return
@@ -519,6 +600,9 @@ class CodeSnips:
 
                 deadline = time.monotonic() + interval
                 while time.monotonic() < deadline and not self.stop_requested:
+                    if dock_active and self._should_pause_dock():
+                        time.sleep(0.5)
+                        continue
                     if dock_active and self.resize_requested:
                         self.resize_requested = False
                         try:
@@ -551,19 +635,29 @@ class CodeSnips:
         except (BrokenPipeError, OSError):
             pass
         except Exception:
-            pass
+            if os.environ.get("CODESNIPS_DEBUG"):
+                import traceback
+
+                traceback.print_exc()
         finally:
-            try:
-                terminal_dock.cleanup()
-            except (BrokenPipeError, OSError):
-                terminal_dock.best_effort_reset()
+            # Avoid writing terminal control sequences while an unsafe foreground
+            # app is active; better to leak our scroll region than to corrupt UI.
+            safe_to_cleanup = not dock_active or not self._should_pause_dock()
+            if safe_to_cleanup:
+                try:
+                    terminal_dock.cleanup()
+                except (BrokenPipeError, OSError):
+                    terminal_dock.best_effort_reset()
             self._restore_signal_handlers()
             self._unregister_pid_file()
 
     def list_terms(self):
-        self.console.print("\n[bold]Available terms:[/bold]\n")
-
         terms = sorted(self.snippets.keys())
+        if not terms:
+            self.console.print("\n[yellow]No snippets loaded.[/yellow]\n")
+            return
+
+        self.console.print("\n[bold]Available terms:[/bold]\n")
         columns = 4
         col_width = max(len(t) for t in terms) + 2
 
@@ -604,7 +698,101 @@ class CodeSnips:
             self.console.print(f"  [dim]... and {len(matches) - 5} more[/dim]\n")
 
 
+def _proxy_binary_candidates() -> list[Path]:
+    script_dir = Path(__file__).resolve().parent
+    candidates = [
+        script_dir / "snips-proxy",
+        script_dir / "bin" / "snips-proxy",
+        Path.home() / ".local" / "bin" / "snips-proxy",
+    ]
+
+    path_hit = shutil.which("snips-proxy")
+    if path_hit:
+        candidates.insert(0, Path(path_hit))
+
+    unique: list[Path] = []
+    seen: set[Path] = set()
+    for path in candidates:
+        resolved = path.expanduser()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        unique.append(resolved)
+    return unique
+
+
+def _find_proxy_binary() -> Optional[Path]:
+    for candidate in _proxy_binary_candidates():
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return candidate
+    return None
+
+
+def _build_proxy_binary() -> Optional[Path]:
+    go_binary = shutil.which("go")
+    if go_binary is None:
+        return None
+
+    script_dir = Path(__file__).resolve().parent
+    target = Path.home() / ".local" / "bin" / "snips-proxy"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        prefix="snips-proxy.",
+        dir=target.parent,
+        delete=False,
+    ) as tmp:
+        tmp_path = Path(tmp.name)
+
+    try:
+        result = subprocess.run(
+            [go_binary, "build", "-o", str(tmp_path), "./cmd/snips-proxy"],
+            cwd=script_dir,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        if result.returncode != 0:
+            stderr = result.stderr.strip()
+            if stderr:
+                sys.stderr.write(f"Failed to build snips-proxy:\n{stderr}\n")
+            tmp_path.unlink(missing_ok=True)
+            return None
+
+        tmp_path.chmod(0o755)
+        tmp_path.replace(target)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    if target.is_file() and os.access(target, os.X_OK):
+        return target
+    return None
+
+
+def _dispatch_proxy_mode(argv: list[str]):
+    proxy_binary = _find_proxy_binary()
+    if proxy_binary is None:
+        proxy_binary = _build_proxy_binary()
+    if proxy_binary is None:
+        sys.stderr.write(
+            "snips proxy mode is not available.\n"
+            "Run ./install.sh to build/install snips-proxy, then try again.\n"
+        )
+        sys.exit(2)
+
+    proxy_args = [str(proxy_binary), "--snippets-file", str(Path(__file__).parent / "snippets.json")]
+    proxy_args.extend(argv)
+    os.execv(str(proxy_binary), proxy_args)
+
+
 def main():
+    raw_args = sys.argv[1:]
+    if raw_args:
+        if raw_args[0] == "wrap":
+            _dispatch_proxy_mode(raw_args[1:])
+        if raw_args[0] == "--proxy":
+            _dispatch_proxy_mode(raw_args[1:])
+
     dock_arg_explicit = "--dock" in sys.argv
     parser = argparse.ArgumentParser(
         description="codesnips - A lightweight terminal learning tool",
@@ -612,6 +800,8 @@ def main():
         epilog="""
 Examples:
   snips                          Show a random snippet
+  snips wrap                     Run a proxy shell with a protected top bar
+  snips wrap -- codex            Run a specific command inside the proxy
   snips --run                    Keep a fixed snippet dock at the top of the terminal
   snips --run --dock bottom      Keep the dock at the bottom instead
   snips --run -i 60 --height 7   Run with a 60 second interval and taller dock
@@ -656,6 +846,17 @@ Examples:
         action="store_true",
         help="Stop a background codesnips runner",
     )
+    parser.add_argument(
+        "--no-pause",
+        action="store_true",
+        help="Don't pause dock refresh for foreground apps (may corrupt TUIs)",
+    )
+    parser.add_argument(
+        "--pause-on",
+        type=str,
+        default="claude",
+        help="Comma-separated substrings that pause dock refresh (default: claude)",
+    )
 
     args = parser.parse_args()
 
@@ -673,6 +874,8 @@ Examples:
             clear=not args.no_clear,
             dock=args.dock,
             height=args.height,
+            pause_on=[t.strip() for t in args.pause_on.split(",") if t.strip()],
+            pause_enabled=not args.no_pause,
         )
     elif args.term:
         snips.display_snippet(args.term)
