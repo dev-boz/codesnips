@@ -1,0 +1,262 @@
+{
+  "mcp": {
+    "term": "MCP (Model Context Protocol)",
+    "definition": "A protocol that allows AI models to connect to external data sources and tools. Think of it as a universal adapter that lets AI assistants access your files, databases, and APIs safely."
+  },
+  "unix": {
+    "term": "Unix",
+    "definition": "A family of operating systems known for simplicity and portability. Core philosophy: everything is a file, small tools that do one thing well, and combine via pipes."
+  },
+  "ci": {
+    "term": "CI (Continuous Integration)",
+    "definition": "Automated testing that runs every time you push code. Catches bugs early by running tests, linters, and builds automatically."
+  },
+  "cd": {
+    "term": "CD (Continuous Deployment/Delivery)",
+    "definition": "Automates releasing code to production after tests pass. CD = ship confident code faster."
+  },
+  "docker": {
+    "term": "Docker",
+    "definition": "Packages applications with their dependencies into containers. Like a lightweight VM - runs the same everywhere, no 'works on my machine' issues."
+  },
+  "kubernetes": {
+    "term": "Kubernetes (k8s)",
+    "definition": "Orchestrates Docker containers at scale. Handles deployment, scaling, and management. Think: conductor for a container orchestra."
+  },
+  "api": {
+    "term": "API (Application Programming Interface)",
+    "definition": "A contract for software to communicate. Like a restaurant menu - tells you what you can order and how."
+  },
+  "rest": {
+    "term": "REST (Representational State Transfer)",
+    "definition": "An API design style using HTTP methods (GET, POST, PUT, DELETE). Stateless, cacheable, and widely adopted."
+  },
+  "grpc": {
+    "term": "gRPC",
+    "definition": "High-performance RPC framework using HTTP/2 and Protocol Buffers. Faster than REST for service-to-service communication."
+  },
+  "git": {
+    "term": "Git",
+    "definition": "Distributed version control system. Tracks changes, enables collaboration, and saves you from 'oops' moments."
+  },
+  "ssh": {
+    "term": "SSH (Secure Shell)",
+    "definition": "Protocol for secure remote access to servers. Encrypts everything, uses key-based auth."
+  },
+  "jwt": {
+    "term": "JWT (JSON Web Token)",
+    "definition": "Compact, self-contained tokens for auth. Contains encoded data (not encrypted) - sign but don't store secrets in them."
+  },
+  "oauth": {
+    "term": "OAuth",
+    "definition": "Authorization framework. Lets apps access your data without giving them your password. Used by 'Login with Google/GitHub'."
+  },
+  "sdk": {
+    "term": "SDK (Software Development Kit)",
+    "definition": "Pre-built tools and libraries for a platform. Speeds up development by providing ready-to-use code."
+  },
+  "ide": {
+    "term": "IDE (Integrated Development Environment)",
+    "definition": "Code editor on steroids. Combines writing, debugging, and building code. Examples: VS Code, IntelliJ, PyCharm."
+  },
+  "linter": {
+    "term": "Linter",
+    "definition": "Static analysis tool that finds bugs and style issues before you run code. Like spellcheck for your code."
+  },
+  "yaml": {
+    "term": "YAML",
+    "definition": "Human-readable data format. Uses indentation (spaces, not tabs!). Common for config files like Kubernetes, GitHub Actions."
+  },
+  "json": {
+    "term": "JSON (JavaScript Object Notation)",
+    "definition": "Lightweight data interchange format. Easy for humans to read, easy for machines to parse. The lingua franca of APIs."
+  },
+  "orm": {
+    "term": "ORM (Object-Relational Mapping)",
+    "definition": "Lets you interact with databases using objects instead of SQL. Examples: SQLAlchemy, Prisma, Hibernate."
+  },
+  "sql": {
+    "term": "SQL (Structured Query Language)",
+    "definition": "Language for interacting with relational databases. SELECT, INSERT, UPDATE, DELETE - the basics of data manipulation."
+  },
+  "nosql": {
+    "term": "NoSQL",
+    "definition": "Non-relational databases for flexible schemas. Good for unstructured data. Examples: MongoDB, Redis, Cassandra."
+  },
+  "microservices": {
+    "term": "Microservices",
+    "definition": "Architecture pattern: small, independent services. Each does one thing, communicates via APIs. Opposite of monolith."
+  },
+  "monolith": {
+    "term": "Monolith",
+    "definition": "Single unified codebase for all functionality. Simpler to develop and deploy, but harder to scale independently."
+  },
+  "serverless": {
+    "term": "Serverless",
+    "definition": "Cloud runs your code without managing servers. Pay per execution. Examples: AWS Lambda, Cloudflare Workers."
+  },
+  "websocket": {
+    "term": "WebSocket",
+    "definition": "Protocol for real-time, bidirectional communication. Unlike HTTP, the connection stays open. Perfect for chat apps, live updates, and gaming."
+  },
+  "cors": {
+    "term": "CORS (Cross-Origin Resource Sharing)",
+    "definition": "Browser security feature. Controls which domains can access your API. Misconfigure it = lots of red console errors."
+  },
+  "csrf": {
+    "term": "CSRF (Cross-Site Request Forgery)",
+    "definition": "Attack that tricks users into submitting unwanted actions. Prevented with CSRF tokens and SameSite cookies."
+  },
+  "xss": {
+    "term": "XSS (Cross-Site Scripting)",
+    "definition": "Attack injecting malicious scripts into web pages. Prevent by escaping user input and using Content Security Policy."
+  },
+  "env": {
+    "term": ".env file",
+    "definition": "File storing environment variables (API keys, config). NEVER commit to git. Use .env.example for templates."
+  },
+  "mutex": {
+    "term": "Mutex (Mutual Exclusion)",
+    "definition": "Locking mechanism preventing race conditions. Only one thread can access a resource at a time."
+  },
+  "race_condition": {
+    "term": "Race Condition",
+    "definition": "Bug where outcome depends on timing. Multiple processes access shared data = unpredictable results."
+  },
+  "idempotent": {
+    "term": "Idempotent",
+    "definition": "Operation that gives same result no matter how many times called. GET, PUT should be idempotent. POST is not."
+  },
+  "async": {
+    "term": "Async/Await",
+    "definition": "Pattern for handling asynchronous operations. Write async code that looks synchronous. Non-blocking, efficient."
+  },
+  "callback": {
+    "term": "Callback",
+    "definition": "Function passed as argument, called when operation completes. Foundation of async JS, can lead to 'callback hell'."
+  },
+  "promise": {
+    "term": "Promise",
+    "definition": "Object representing future value. States: pending, fulfilled, rejected. Cleaner than callbacks for async code."
+  },
+  "functional_programming": {
+    "term": "Functional Programming",
+    "definition": "Paradigm using pure functions, immutability. No side effects, no shared state. map/filter/reduce are your friends."
+  },
+  "oop": {
+    "term": "OOP (Object-Oriented Programming)",
+    "definition": "Paradigm using objects with data and behavior. Key concepts: encapsulation, inheritance, polymorphism."
+  },
+  "solid": {
+    "term": "SOLID Principles",
+    "definition": "5 design principles: Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion."
+  },
+  "dry": {
+    "term": "DRY (Don't Repeat Yourself)",
+    "definition": "Principle: every piece of knowledge should have one authoritative representation. Reduce duplication."
+  },
+  "kiss": {
+    "term": "KISS (Keep It Simple, Stupid)",
+    "definition": "Principle: simplicity should be a key goal. Avoid unnecessary complexity. Complex solutions create complex bugs."
+  },
+  "yagni": {
+    "term": "YAGNI (You Ain't Gonna Need It)",
+    "definition": "Principle: don't build features you don't need yet. Save time, reduce complexity."
+  },
+  "tech_debt": {
+    "term": "Technical Debt",
+    "definition": "Shortcuts that speed up now but slow you later. Like financial debt: sometimes useful, always needs repayment."
+  },
+  "refactoring": {
+    "term": "Refactoring",
+    "definition": "Restructuring code without changing behavior. Improve readability, reduce complexity. Do it in small steps."
+  },
+  "tdd": {
+    "term": "TDD (Test-Driven Development)",
+    "definition": "Write tests before code. Cycle: write failing test, make it pass, refactor. Ensures testable, well-designed code."
+  },
+  "mocking": {
+    "term": "Mocking",
+    "definition": "Creating fake objects for testing. Isolate unit tests from dependencies like databases, APIs."
+  },
+  "deprecation": {
+    "term": "Deprecation",
+    "definition": "Marking code as obsolete. Still works, but will be removed. Signals: migrate to newer alternative."
+  },
+  "semantic_versioning": {
+    "term": "Semantic Versioning (SemVer)",
+    "definition": "Versioning scheme: MAJOR.MINOR.PATCH. Breaking changes bump major, features bump minor, fixes bump patch."
+  },
+  "hash": {
+    "term": "Hash",
+    "definition": "Fixed-size output from arbitrary input. Same input = same hash. Used for passwords, data integrity, caching."
+  },
+  "encryption": {
+    "term": "Encryption",
+    "definition": "Converting data into secret code. Symmetric = same key encrypt/decrypt. Asymmetric = public/private key pair."
+  },
+  "base64": {
+    "term": "Base64",
+    "definition": "Encoding binary data as ASCII text. Not encryption! Used for images in HTML, email attachments."
+  },
+  "dns": {
+    "term": "DNS (Domain Name System)",
+    "definition": "Translates domain names to IP addresses. The internet's phonebook. Example: google.com -> 142.250.185.78"
+  },
+  "load_balancer": {
+    "term": "Load Balancer",
+    "definition": "Distributes traffic across multiple servers. Prevents overload, enables zero-downtime deployments."
+  },
+  "reverse_proxy": {
+    "term": "Reverse Proxy",
+    "definition": "Server that forwards client requests to backend servers. Nginx, HAProxy are common examples."
+  },
+  "cache": {
+    "term": "Cache",
+    "definition": "Temporary storage for fast access. Trade-off: speed vs freshness. Examples: Redis, Memcached, browser cache."
+  },
+  "cdn": {
+    "term": "CDN (Content Delivery Network)",
+    "definition": "Distributed servers delivering content from nearest location. Speeds up static assets globally."
+  },
+  "blue_green": {
+    "term": "Blue-Green Deployment",
+    "definition": "Two identical environments. Switch traffic from old (blue) to new (green). Enables instant rollback."
+  },
+  "canary_deployment": {
+    "term": "Canary Deployment",
+    "definition": "Roll out changes to small subset first. If issues detected, blast radius is limited. Named after canary in coal mine."
+  },
+  "feature_flag": {
+    "term": "Feature Flag",
+    "definition": "Toggle features on/off without deploying. Enables gradual rollouts, A/B testing, quick rollbacks."
+  },
+  "observability": {
+    "term": "Observability",
+    "definition": "Understanding system state from external outputs. Three pillars: logs, metrics, traces."
+  },
+  "logging": {
+    "term": "Logging",
+    "definition": "Recording events for debugging and auditing. Levels: DEBUG, INFO, WARN, ERROR. Don't log secrets!"
+  },
+  "metrics": {
+    "term": "Metrics",
+    "definition": "Numerical measurements over time. Track performance, errors, usage. Prometheus is the standard."
+  },
+  "tracing": {
+    "term": "Distributed Tracing",
+    "definition": "Track requests across microservices. Debug latency, find bottlenecks. Tools: Jaeger, Zipkin."
+  },
+  "slo": {
+    "term": "SLO (Service Level Objective)",
+    "definition": "Target reliability metric. Example: 99.9% uptime. Defines what 'good' looks like."
+  },
+  "sla": {
+    "term": "SLA (Service Level Agreement)",
+    "definition": "Contract specifying reliability commitments. Miss the SLA = financial penalties or credits."
+  },
+  "error_budget": {
+    "term": "Error Budget",
+    "definition": "Allowed amount of unreliability. If SLO is 99.9%, you have 43.2 min downtime/month. Spend it wisely."
+  }
+}
