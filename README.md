@@ -22,7 +22,7 @@ Reload: `source ~/.bashrc`
 
 ```bash
 snips                           # Show a random snippet
-snips wrap                      # Proxy your shell inside a PTY with a protected top bar
+snips wrap                      # Proxy your shell inside a PTY with a snippet bar at the bottom
 snips wrap -- codex             # Run a specific CLI inside the proxy
 snips --proxy                   # Alias for snips wrap
 snips --run                     # Dock snippets at the top of the terminal
@@ -53,7 +53,7 @@ snips wrap -- claude
 snips wrap -- vim
 ```
 
-`snips wrap` starts your shell or target command inside a PTY and keeps the snippet bar pinned at the top by rewriting absolute cursor/scroll-region VT sequences before they hit your terminal. That avoids the old “two writers fighting over one screen” failure mode, so full-screen apps like Codex, Claude, `vim`, `less`, and `top` can stay inside the lowered viewport.
+`snips wrap` starts your shell or target command inside a PTY with a snippet bar pinned at the bottom of the terminal. It rewrites absolute cursor and scroll-region VT sequences so full-screen apps like Claude, Codex, `vim`, `less`, and `top` render correctly. Terminal scrollback (Shift+PageUp and mouse wheel) works natively because the child viewport starts at row 1.
 
 `snips --run` remains available as a simpler fallback for split panes, background docks, or cases where you do not want a proxy shell.
 
@@ -75,7 +75,7 @@ Edit `snippets.json` to add more terms:
 ## Tips
 
 - Use `--dock top` or `--dock bottom` to reserve a fixed area of the terminal
-- Prefer `snips wrap` when you want to run Claude/Codex/vim in the same terminal without output corruption
+- Prefer `snips wrap` when you want to run Claude/Codex/vim in the same terminal — scrollback and mouse wheel work natively
 - For Codex specifically, prefer `--dock top --height 4`; it uses the bottom of the screen itself
 - Run `snips --run ... &` before starting Claude, Codex, or another full-screen CLI
 - Use `snips --stop` to kill the background dock after your coding session

@@ -113,7 +113,6 @@ import (
 const (
 	defaultInterval = 30 * time.Second
 	defaultHeight   = 2
-	repaintEvery    = 500 * time.Millisecond
 )
 
 type snippet struct {
@@ -211,27 +210,27 @@ type tracker struct {
 	scrollBottom int
 }
 
-func newTracker(rows, cols, childTop int) *tracker {
+func newTracker(rows, cols, scrollTop, scrollBottom int) *tracker {
 	return &tracker{
 		rows:         rows,
 		cols:         cols,
-		row:          childTop,
+		row:          scrollTop,
 		col:          1,
-		savedRow:     childTop,
+		savedRow:     scrollTop,
 		savedCol:     1,
-		scrollTop:    childTop,
-		scrollBottom: rows,
+		scrollTop:    scrollTop,
+		scrollBottom: scrollBottom,
 	}
 }
 
-func (t *tracker) resize(rows, cols, childTop int) {
+func (t *tracker) resize(rows, cols, scrollTop, scrollBottom int) {
 	t.rows = rows
 	t.cols = cols
-	t.scrollTop = childTop
-	t.scrollBottom = rows
-	t.row = clamp(t.row, childTop, rows)
+	t.scrollTop = scrollTop
+	t.scrollBottom = scrollBottom
+	t.row = clamp(t.row, scrollTop, scrollBottom)
 	t.col = clamp(t.col, 1, max(1, cols))
-	t.savedRow = clamp(t.savedRow, childTop, rows)
+	t.savedRow = clamp(t.savedRow, scrollTop, scrollBottom)
 	t.savedCol = clamp(t.savedCol, 1, max(1, cols))
 }
 
@@ -339,8 +338,11 @@ type proxy struct {
 	store           *snippetStore
 	currentSnippet  snippet
 	currentTheme    colorTheme
+	altScreenActive bool
+	altSavedRow     int
+	altSavedCol     int
 	tracker         *tracker
-	rewriter        *ansiRewriter
+	rewriter           *ansiRewriter
 }
 
 func newProxy(master *os.File, childPID int, stdinFD int, stdout io.Writer, requestedHeight int, store *snippetStore) *proxy {
@@ -359,12 +361,12 @@ func (p *proxy) updateLayout(rows, cols int) {
 	p.cols = max(20, cols)
 	maxBar := max(0, p.rows-1)
 	p.barHeight = min(p.requestedHeight, maxBar)
-	p.childTop = p.barHeight + 1
+	p.childTop = 1
 	p.childRows = max(1, p.rows-p.barHeight)
 	if p.tracker == nil {
-		p.tracker = newTracker(p.rows, p.cols, p.childTop)
+		p.tracker = newTracker(p.rows, p.cols, 1, p.childRows)
 	} else {
-		p.tracker.resize(p.rows, p.cols, p.childTop)
+		p.tracker.resize(p.rows, p.cols, 1, p.childRows)
 	}
 	if p.rewriter == nil {
 		p.rewriter = newANSIRewriter(p)
@@ -376,6 +378,19 @@ func (p *proxy) updateLayout(rows, cols int) {
 func (p *proxy) nextSnippet() {
 	p.currentSnippet = p.store.next()
 	p.currentTheme = colorThemes[p.store.randomizer.Intn(len(colorThemes))]
+}
+
+func (p *proxy) saveAltCursor() {
+	p.altSavedRow = p.tracker.row
+	p.altSavedCol = p.tracker.col
+}
+
+func (p *proxy) restoreAltCursor() {
+	if p.altSavedRow == 0 {
+		p.tracker.setCursor(p.childTop, 1)
+		return
+	}
+	p.tracker.setCursor(p.altSavedRow, p.altSavedCol)
 }
 
 func (p *proxy) initializeTerminal() error {
@@ -390,12 +405,9 @@ func (p *proxy) applyChildViewport() error {
 	seq.WriteString("\x1b[0m")
 	seq.WriteString("\x1b[r")
 	if p.barHeight > 0 {
-		seq.WriteString(formatCUP(p.childTop, 1))
-		seq.WriteString(fmt.Sprintf("\x1b[%d;%dr", p.childTop, p.rows))
-		seq.WriteString(formatCUP(p.childTop, 1))
-	} else {
-		seq.WriteString(formatCUP(1, 1))
+		seq.WriteString(fmt.Sprintf("\x1b[1;%dr", p.childRows))
 	}
+	seq.WriteString(formatCUP(1, 1))
 	_, err := p.stdout.Write(seq.Bytes())
 	return err
 }
@@ -411,7 +423,7 @@ func (p *proxy) drawBar() error {
 	buf.WriteString("\x1b[0m")
 	buf.WriteString("\x1b[r")
 	for i := 0; i < p.barHeight; i++ {
-		row := i + 1
+		row := p.childRows + 1 + i
 		buf.WriteString(formatCUP(row, 1))
 		buf.WriteString("\x1b[2K")
 		if i < len(lines) {
@@ -420,7 +432,7 @@ func (p *proxy) drawBar() error {
 		buf.WriteString("\x1b[0m")
 	}
 	if p.barHeight > 0 {
-		buf.WriteString(fmt.Sprintf("\x1b[%d;%dr", p.childTop, p.rows))
+		buf.WriteString(fmt.Sprintf("\x1b[1;%dr", p.childRows))
 	}
 	buf.WriteString(formatCUP(p.tracker.row, p.tracker.col))
 	_, err := p.stdout.Write(buf.Bytes())
@@ -484,10 +496,12 @@ func (p *proxy) cleanup() {
 	buf.WriteString("\x1b[0m")
 	buf.WriteString("\x1b[r")
 	if p.barHeight > 0 {
-		buf.WriteString(formatCUP(1, 1))
-		buf.WriteString(fmt.Sprintf("\x1b[%dM", p.barHeight))
+		for i := 0; i < p.barHeight; i++ {
+			buf.WriteString(formatCUP(p.childRows+1+i, 1))
+			buf.WriteString("\x1b[2K")
+		}
 	}
-	buf.WriteString(formatCUP(clamp(p.tracker.row-p.barHeight, 1, p.rows), p.tracker.col))
+	buf.WriteString(formatCUP(clamp(p.tracker.row, 1, p.rows), p.tracker.col))
 	_, _ = p.stdout.Write(buf.Bytes())
 }
 
@@ -732,16 +746,75 @@ func (r *ansiRewriter) rewriteCSI(seq []byte) []byte {
 		r.proxy.tracker.setScrollRegion(actualTop, actualBottom)
 		return []byte(fmt.Sprintf("\x1b[%d;%dr", actualTop, actualBottom))
 	case 'h', 'l':
+		if private == "?" {
+			return r.rewritePrivateMode(params, final)
+		}
 		return append([]byte(nil), seq...)
 	default:
 		return append([]byte(nil), seq...)
 	}
 }
 
+func (r *ansiRewriter) rewritePrivateMode(params []int, final byte) []byte {
+	filtered := make([]int, 0, len(params))
+	var out bytes.Buffer
+
+	for _, param := range params {
+		switch param {
+		case 47, 1047:
+			out.WriteString(r.emulateAltScreen(final, false))
+		case 1048:
+			out.WriteString(r.emulateAltCursor(final))
+		case 1049:
+			out.WriteString(r.emulateAltScreen(final, true))
+		default:
+			filtered = append(filtered, param)
+		}
+	}
+
+	if len(filtered) > 0 {
+		out.WriteString(formatPrivateCSI("?", filtered, final))
+	}
+	return out.Bytes()
+}
+
+func (r *ansiRewriter) emulateAltCursor(final byte) string {
+	if final == 'h' {
+		r.proxy.saveAltCursor()
+		return ""
+	}
+	r.proxy.restoreAltCursor()
+	return formatCUP(r.proxy.tracker.row, r.proxy.tracker.col)
+}
+
+func (r *ansiRewriter) emulateAltScreen(final byte, saveCursor bool) string {
+	if final == 'h' {
+		if saveCursor {
+			r.proxy.saveAltCursor()
+		}
+		r.proxy.altScreenActive = true
+		r.proxy.tracker.setScrollRegion(1, r.proxy.childRows)
+		r.proxy.tracker.setCursor(1, 1)
+		return r.clearChildViewport() +
+			fmt.Sprintf("\x1b[1;%dr", r.proxy.childRows) +
+			formatCUP(1, 1)
+	}
+
+	clear := r.clearChildViewport() + fmt.Sprintf("\x1b[1;%dr", r.proxy.childRows)
+	if saveCursor {
+		r.proxy.restoreAltCursor()
+		r.proxy.altScreenActive = false
+		return clear + formatCUP(r.proxy.tracker.row, r.proxy.tracker.col)
+	}
+	r.proxy.tracker.setCursor(1, 1)
+	r.proxy.altScreenActive = false
+	return clear + formatCUP(1, 1)
+}
+
 func (r *ansiRewriter) rewriteEraseDisplay(mode int) []byte {
 	switch mode {
 	case 0:
-		return []byte("\x1b[0J")
+		return []byte(r.clearFromCursorDown())
 	case 1:
 		return []byte(r.clearToCursor())
 	case 2, 3:
@@ -769,7 +842,23 @@ func (r *ansiRewriter) clearChildViewport() string {
 	buf := bytes.NewBuffer(nil)
 	cursorRow := r.proxy.tracker.row
 	cursorCol := r.proxy.tracker.col
-	for row := r.proxy.childTop; row <= r.proxy.rows; row++ {
+	for row := 1; row <= r.proxy.childRows; row++ {
+		buf.WriteString(formatCUP(row, 1))
+		buf.WriteString("\x1b[2K")
+	}
+	buf.WriteString(formatCUP(cursorRow, cursorCol))
+	return buf.String()
+}
+
+func (r *ansiRewriter) clearFromCursorDown() string {
+	cursorRow := r.proxy.tracker.row
+	cursorCol := r.proxy.tracker.col
+	if cursorRow >= r.proxy.childRows {
+		return "\x1b[0K"
+	}
+	buf := bytes.NewBuffer(nil)
+	buf.WriteString("\x1b[0K")
+	for row := cursorRow + 1; row <= r.proxy.childRows; row++ {
 		buf.WriteString(formatCUP(row, 1))
 		buf.WriteString("\x1b[2K")
 	}
@@ -930,6 +1019,14 @@ func wrapText(text string, width int) []string {
 
 func formatCUP(row, col int) string {
 	return fmt.Sprintf("\x1b[%d;%dH", row, col)
+}
+
+func formatPrivateCSI(private string, params []int, final byte) string {
+	parts := make([]string, 0, len(params))
+	for _, param := range params {
+		parts = append(parts, fmt.Sprintf("%d", param))
+	}
+	return fmt.Sprintf("\x1b[%s%s%c", private, strings.Join(parts, ";"), final)
 }
 
 func containsString(values []string, needle string) bool {
@@ -1105,9 +1202,6 @@ func main() {
 	go waitChild(pid, exitCh)
 	go copyInput(master, os.Stdin)
 
-	repaintTicker := time.NewTicker(repaintEvery)
-	defer repaintTicker.Stop()
-
 	rotateTicker := time.NewTicker(time.Duration(max(1, intervalSecs)) * time.Second)
 	defer rotateTicker.Stop()
 
@@ -1131,10 +1225,6 @@ loop:
 			if err := proxy.handleChildOutput(chunk); err != nil {
 				break loop
 			}
-		case <-repaintTicker.C:
-			if err := proxy.drawBar(); err != nil {
-				break loop
-			}
 		case <-rotateTicker.C:
 			proxy.nextSnippet()
 			if err := proxy.drawBar(); err != nil {
@@ -1154,6 +1244,10 @@ loop:
 	}
 
 	signalChildGroup(pid, syscall.SIGHUP)
+
+	// Explicitly clean up before os.Exit (which skips defers).
+	proxy.cleanup()
+	mode.restore()
 
 	if childStatus.err != nil {
 		fmt.Fprintf(os.Stderr, "child wait failed: %v\n", childStatus.err)
