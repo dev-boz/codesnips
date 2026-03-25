@@ -20,6 +20,8 @@ const (
 	defaultHeight   = 2
 )
 
+var version = "dev"
+
 func main() {
 	os.Exit(run(os.Args[1:]))
 }
@@ -29,6 +31,9 @@ func run(args []string) int {
 		switch args[0] {
 		case "wrap", "--proxy":
 			return runWrap(args[1:])
+		case "version", "--version", "-version":
+			fmt.Println(buildVersion())
+			return 0
 		case "--run":
 			fmt.Fprintln(os.Stderr, "`snips --run` was removed. Use `snips wrap`.")
 			return 2
@@ -166,10 +171,12 @@ func defaultShell() string {
 
 func printUsage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
+	fmt.Fprintln(os.Stderr, "  snips [--version]")
 	fmt.Fprintln(os.Stderr, "  snips [--file PATH] [--list | --search QUERY | TERM]")
 	fmt.Fprintln(os.Stderr, "  snips wrap [--height N] [--interval SECONDS] [--file PATH] [-- command ...]")
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "Examples:")
+	fmt.Fprintln(os.Stderr, "  snips --version")
 	fmt.Fprintln(os.Stderr, "  snips")
 	fmt.Fprintln(os.Stderr, "  snips docker")
 	fmt.Fprintln(os.Stderr, "  snips --list")
@@ -253,4 +260,11 @@ func renderAvailablePreview(terms []string) {
 		fmt.Fprint(os.Stderr, ", ...")
 	}
 	fmt.Fprintln(os.Stderr)
+}
+
+func buildVersion() string {
+	if strings.TrimSpace(version) == "" {
+		return "dev"
+	}
+	return version
 }

@@ -1,0 +1,32 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" rx="28" fill="#F3EEE6"/>
+  <rect x="52" y="46" width="1096" height="668" rx="22" fill="#17181C"/>
+  <rect x="52" y="46" width="1096" height="54" rx="22" fill="#23252C"/>
+  <rect x="52" y="78" width="1096" height="22" fill="#23252C"/>
+  <circle cx="88" cy="73" r="8" fill="#F46D5F"/>
+  <circle cx="116" cy="73" r="8" fill="#F5C451"/>
+  <circle cx="144" cy="73" r="8" fill="#58C66C"/>
+  <text x="600" y="78" text-anchor="middle" fill="#C7CCD6" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="18">snips wrap -- codex</text>
+
+  <text x="88" y="148" fill="#8FD3FF" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="26">$</text>
+  <text x="114" y="148" fill="#F4F7FB" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="26">snips --version</text>
+  <text x="88" y="190" fill="#E7EAF0" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="26">v0.1.0</text>
+
+  <text x="88" y="258" fill="#8FD3FF" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="26">$</text>
+  <text x="114" y="258" fill="#F4F7FB" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="26">snips api</text>
+
+  <rect x="88" y="292" width="1024" height="202" rx="14" fill="#1E2128" stroke="#6F79FF" stroke-width="2"/>
+  <text x="120" y="338" fill="#FFE082" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="24" font-weight="700">CodeSnips</text>
+  <text x="292" y="338" fill="#7FE7D8" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="24" font-weight="700">API (Application Programming Interface)</text>
+  <text x="120" y="390" fill="#E7EAF0" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="23">A contract for software to communicate. Like a restaurant menu</text>
+  <text x="120" y="426" fill="#E7EAF0" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="23">that tells you what you can order and how.</text>
+
+  <text x="88" y="544" fill="#8FD3FF" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="26">$</text>
+  <text x="114" y="544" fill="#F4F7FB" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="26">snips wrap -- codex</text>
+  <text x="88" y="586" fill="#9AA3B2" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="24">› wrapping your shell or command with a pinned snippet bar</text>
+
+  <rect x="88" y="616" width="1024" height="34" rx="6" fill="#19536B"/>
+  <rect x="88" y="650" width="1024" height="34" rx="6" fill="#BDEBFF"/>
+  <text x="112" y="640" fill="#F9FCFF" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20" font-weight="700">CodeSnips | API (APPLICATION PROGRAMMING INTERFACE)</text>
+  <text x="112" y="674" fill="#111419" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="19">A contract for software to communicate. Like a restaurant menu that tells you what you can order and how.</text>
+</svg>
