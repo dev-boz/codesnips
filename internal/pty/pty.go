@@ -32,7 +32,6 @@ func Start(argv []string, rows, cols int) (*Child, error) {
 	attrs := &syscall.SysProcAttr{
 		Setsid:  true,
 		Setctty: true,
-		Setpgid: true,
 	}
 	master, err := creackpty.StartWithAttrs(cmd, &creackpty.Winsize{
 		Rows: uint16(rows),
