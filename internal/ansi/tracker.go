@@ -107,9 +107,12 @@ func (t *Tracker) Printable(width int) {
 	if width <= 0 {
 		width = 1
 	}
-	t.Col += width
-	if t.Col > t.Cols {
-		t.Col = t.Cols
+	cols := max(1, t.Cols)
+	total := t.Col - 1 + width
+	wraps := total / cols
+	t.Col = total%cols + 1
+	for i := 0; i < wraps; i++ {
+		t.LineFeed()
 	}
 }
 

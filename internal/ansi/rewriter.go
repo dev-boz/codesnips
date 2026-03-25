@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"unicode/utf8"
+
+	"github.com/mattn/go-runewidth"
 )
 
 type Layout struct {
@@ -13,9 +15,8 @@ type Layout struct {
 }
 
 type Callbacks struct {
-	SaveAltCursor      func()
-	RestoreAltCursor   func()
-	SetAltScreenActive func(active bool)
+	SaveAltCursor    func()
+	RestoreAltCursor func()
 }
 
 type Rewriter struct {
@@ -109,7 +110,7 @@ func (r *Rewriter) consumePrintableByte(b byte) {
 	r.utfPending = append(r.utfPending, b)
 	for len(r.utfPending) > 0 {
 		if r.utfPending[0] < utf8.RuneSelf {
-			r.tracker.Printable(1)
+			r.tracker.Printable(runewidth.RuneWidth(rune(r.utfPending[0])))
 			r.utfPending = r.utfPending[1:]
 			continue
 		}
@@ -120,19 +121,38 @@ func (r *Rewriter) consumePrintableByte(b byte) {
 			}
 			return
 		}
-		_, size := utf8.DecodeRune(r.utfPending)
+		decoded, size := utf8.DecodeRune(r.utfPending)
 		if size <= 0 {
 			return
 		}
-		r.tracker.Printable(1)
+		width := runewidth.RuneWidth(decoded)
+		if width <= 0 {
+			width = 1
+		}
+		r.tracker.Printable(width)
 		r.utfPending = r.utfPending[size:]
 	}
 }
 
 func (r *Rewriter) flushPendingPrintable() {
 	for len(r.utfPending) > 0 {
-		r.tracker.Printable(1)
-		r.utfPending = r.utfPending[1:]
+		if r.utfPending[0] < utf8.RuneSelf {
+			r.tracker.Printable(runewidth.RuneWidth(rune(r.utfPending[0])))
+			r.utfPending = r.utfPending[1:]
+			continue
+		}
+		if !utf8.FullRune(r.utfPending) {
+			r.tracker.Printable(1)
+			r.utfPending = r.utfPending[1:]
+			continue
+		}
+		decoded, size := utf8.DecodeRune(r.utfPending)
+		width := runewidth.RuneWidth(decoded)
+		if width <= 0 {
+			width = 1
+		}
+		r.tracker.Printable(width)
+		r.utfPending = r.utfPending[size:]
 	}
 }
 
@@ -355,9 +375,6 @@ func (r *Rewriter) emulateAltScreen(final byte, saveCursor bool) string {
 		if saveCursor && r.callbacks.SaveAltCursor != nil {
 			r.callbacks.SaveAltCursor()
 		}
-		if r.callbacks.SetAltScreenActive != nil {
-			r.callbacks.SetAltScreenActive(true)
-		}
 		r.tracker.SetScrollRegion(1, r.layout.ChildRows)
 		r.tracker.SetCursor(1, 1)
 		return r.clearChildViewport() +
@@ -366,9 +383,6 @@ func (r *Rewriter) emulateAltScreen(final byte, saveCursor bool) string {
 	}
 
 	clear := r.clearChildViewport() + fmt.Sprintf("\x1b[1;%dr", r.layout.ChildRows)
-	if r.callbacks.SetAltScreenActive != nil {
-		r.callbacks.SetAltScreenActive(false)
-	}
 	if saveCursor {
 		if r.callbacks.RestoreAltCursor != nil {
 			r.callbacks.RestoreAltCursor()

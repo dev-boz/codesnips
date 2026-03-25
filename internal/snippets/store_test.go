@@ -22,7 +22,7 @@ func TestNextAvoidsRecentTermsUntilCycleReset(t *testing.T) {
 	}
 
 	picks := make([]string, 0, 3)
-	for range 3 {
+	for i := 0; i < 3; i++ {
 		picks = append(picks, store.Next().Term)
 	}
 
@@ -47,7 +47,7 @@ func TestRecentSetTracksRecentSlice(t *testing.T) {
 		randomizer: rand.New(rand.NewSource(42)),
 	}
 
-	for range 10 {
+	for i := 0; i < 10; i++ {
 		_ = store.Next()
 		if len(store.recent) > store.maxRecent {
 			t.Fatalf("recent exceeded maxRecent: %d > %d", len(store.recent), store.maxRecent)

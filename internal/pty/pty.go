@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	creackpty "github.com/creack/pty"
-	"golang.org/x/term"
+	"golang.org/x/sys/unix"
 )
 
 type Child struct {
@@ -18,9 +18,13 @@ type Child struct {
 
 type TerminalMode struct {
 	fd       int
-	original *term.State
+	original *terminalState
 	restored bool
 	mu       sync.Mutex
+}
+
+type terminalState struct {
+	termios unix.Termios
 }
 
 func Start(argv []string, rows, cols int) (*Child, error) {
@@ -48,14 +52,17 @@ func Start(argv []string, rows, cols int) (*Child, error) {
 }
 
 func IsTTY(fd uintptr) bool {
-	return term.IsTerminal(int(fd))
+	_, err := unix.IoctlGetTermios(int(fd), unix.TCGETS)
+	return err == nil
 }
 
 func TerminalSize(fd int) (int, int, error) {
-	cols, rows, err := term.GetSize(fd)
+	size, err := unix.IoctlGetWinsize(fd, unix.TIOCGWINSZ)
 	if err != nil {
 		return 0, 0, err
 	}
+	cols := int(size.Col)
+	rows := int(size.Row)
 	if rows == 0 {
 		rows = 24
 	}
@@ -73,10 +80,24 @@ func SetSize(file *os.File, rows, cols int) error {
 }
 
 func EnableRawMode(fd int) (*TerminalMode, error) {
-	original, err := term.MakeRaw(fd)
+	termios, err := unix.IoctlGetTermios(fd, unix.TCGETS)
 	if err != nil {
 		return nil, err
 	}
+
+	original := &terminalState{termios: *termios}
+	termios.Iflag &^= unix.IGNBRK | unix.BRKINT | unix.PARMRK | unix.ISTRIP | unix.INLCR | unix.IGNCR | unix.ICRNL | unix.IXON
+	termios.Oflag &^= unix.OPOST
+	termios.Lflag &^= unix.ECHO | unix.ECHONL | unix.ICANON | unix.ISIG | unix.IEXTEN
+	termios.Cflag &^= unix.CSIZE | unix.PARENB
+	termios.Cflag |= unix.CS8
+	termios.Cc[unix.VMIN] = 1
+	termios.Cc[unix.VTIME] = 0
+
+	if err := unix.IoctlSetTermios(fd, unix.TCSETS, termios); err != nil {
+		return nil, err
+	}
+
 	return &TerminalMode{fd: fd, original: original}, nil
 }
 
@@ -86,7 +107,7 @@ func (m *TerminalMode) Restore() {
 	if m.restored {
 		return
 	}
-	_ = term.Restore(m.fd, m.original)
+	_ = unix.IoctlSetTermios(m.fd, unix.TCSETS, &m.original.termios)
 	m.restored = true
 }
 

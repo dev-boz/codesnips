@@ -48,6 +48,16 @@ func TestRewriterGolden(t *testing.T) {
 			startRow: 1,
 			startCol: 1,
 		},
+		{
+			name:     "wide UTF-8 advances by display width",
+			layout:   Layout{ChildTop: 1, ChildRows: 10, Cols: 80},
+			input:    []byte("界"),
+			wantOut:  []byte("界"),
+			wantRow:  1,
+			wantCol:  3,
+			startRow: 1,
+			startCol: 1,
+		},
 	}
 
 	for _, test := range tests {
@@ -85,5 +95,23 @@ func TestRewriterTracksUTF8AcrossChunks(t *testing.T) {
 	}
 	if !bytes.Equal(append(first, second...), input) {
 		t.Fatalf("output bytes changed across chunked UTF-8 input")
+	}
+}
+
+func TestRewriterTracksWideUTF8AcrossChunks(t *testing.T) {
+	t.Parallel()
+
+	tracker := NewTracker(24, 80, 1, 24)
+	rewriter := NewRewriter(tracker, Layout{ChildTop: 1, ChildRows: 24, Cols: 80}, Callbacks{})
+
+	input := []byte("界")
+	first := rewriter.Feed(input[:2])
+	second := rewriter.Feed(input[2:])
+
+	if tracker.Col != 3 {
+		t.Fatalf("expected one wide rune to advance two columns, got col=%d", tracker.Col)
+	}
+	if !bytes.Equal(append(first, second...), input) {
+		t.Fatalf("output bytes changed across chunked wide UTF-8 input")
 	}
 }

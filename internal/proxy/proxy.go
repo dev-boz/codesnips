@@ -14,6 +14,7 @@ import (
 	"github.com/dev-boz/codesnips/internal/ansi"
 	"github.com/dev-boz/codesnips/internal/pty"
 	"github.com/dev-boz/codesnips/internal/snippets"
+	"github.com/mattn/go-runewidth"
 )
 
 var colorThemes = []colorTheme{
@@ -58,11 +59,11 @@ type instance struct {
 	store           *snippets.Store
 	currentSnippet  snippets.Item
 	currentTheme    colorTheme
-	altScreenActive bool
 	altSavedRow     int
 	altSavedCol     int
 	tracker         *ansi.Tracker
 	rewriter        *ansi.Rewriter
+	cleaned         bool
 }
 
 func Run(config Config) (int, error) {
@@ -105,7 +106,6 @@ func Run(config Config) (int, error) {
 	if err := proxy.initializeTerminal(); err != nil {
 		return 1, fmt.Errorf("failed to initialize proxy terminal: %w", err)
 	}
-	defer proxy.cleanup()
 
 	outputCh := make(chan []byte, 32)
 	exitCh := make(chan exitStatus, 1)
@@ -223,17 +223,12 @@ func (p *instance) updateLayout(rows, cols int) {
 
 	if p.rewriter == nil {
 		p.rewriter = ansi.NewRewriter(p.tracker, layout, ansi.Callbacks{
-			SaveAltCursor:      p.saveAltCursor,
-			RestoreAltCursor:   p.restoreAltCursor,
-			SetAltScreenActive: p.setAltScreenActive,
+			SaveAltCursor:    p.saveAltCursor,
+			RestoreAltCursor: p.restoreAltCursor,
 		})
 		return
 	}
 	p.rewriter.UpdateLayout(layout)
-}
-
-func (p *instance) setAltScreenActive(active bool) {
-	p.altScreenActive = active
 }
 
 func (p *instance) nextSnippet() {
@@ -279,6 +274,8 @@ func (p *instance) drawBar() error {
 	}
 
 	lines := p.renderBar()
+	scrollTop := p.tracker.ScrollTop
+	scrollBottom := p.tracker.ScrollBottom
 
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString("\x1b[0m")
@@ -293,7 +290,7 @@ func (p *instance) drawBar() error {
 		buf.WriteString("\x1b[0m")
 	}
 	if p.barHeight > 0 {
-		buf.WriteString(fmt.Sprintf("\x1b[1;%dr", p.childRows))
+		buf.WriteString(fmt.Sprintf("\x1b[%d;%dr", scrollTop, scrollBottom))
 	}
 	buf.WriteString(ansi.FormatCUP(p.tracker.Row, p.tracker.Col))
 	_, err := p.stdout.Write(buf.Bytes())
@@ -308,7 +305,7 @@ func (p *instance) renderBar() []string {
 	defWidth := max(1, p.cols-4)
 	header := fitWidth(
 		fmt.Sprintf(
-			" CodeSnips | %s | Ctrl+C to child | exit to leave proxy ",
+			" CodeSnips | %s ",
 			strings.ToUpper(p.currentSnippet.Term),
 		),
 		p.cols,
@@ -353,6 +350,11 @@ func (p *instance) resize() error {
 }
 
 func (p *instance) cleanup() {
+	if p.cleaned {
+		return
+	}
+	p.cleaned = true
+
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString("\x1b[0m")
 	buf.WriteString("\x1b[r")
@@ -406,22 +408,26 @@ func colorLine(text, bg, fg string) string {
 }
 
 func fitWidth(text string, width int) string {
-	runes := []rune(text)
-	if len(runes) > width {
-		if width <= 1 {
-			return string(runes[:width])
+	if width <= 0 {
+		return ""
+	}
+	if runewidth.StringWidth(text) > width {
+		if width == 1 {
+			text = trimWidth(text, width)
+		} else {
+			text = trimWidth(text, width-1) + "…"
 		}
-		runes = append(runes[:width-1], '…')
 	}
-	if len(runes) < width {
-		runes = append(runes, []rune(strings.Repeat(" ", width-len(runes)))...)
+	padding := width - runewidth.StringWidth(text)
+	if padding > 0 {
+		text += strings.Repeat(" ", padding)
 	}
-	return string(runes)
+	return text
 }
 
 func wrapText(text string, width int) []string {
 	if width <= 1 {
-		return []string{text}
+		return []string{fitWidth(text, max(1, width))}
 	}
 
 	words := strings.Fields(text)
@@ -433,7 +439,7 @@ func wrapText(text string, width int) []string {
 	current := words[0]
 	for _, word := range words[1:] {
 		candidate := current + " " + word
-		if len([]rune(candidate)) <= width {
+		if runewidth.StringWidth(candidate) <= width {
 			current = candidate
 			continue
 		}
@@ -442,4 +448,21 @@ func wrapText(text string, width int) []string {
 	}
 	lines = append(lines, fitWidth(current, width))
 	return lines
+}
+
+func trimWidth(text string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	currentWidth := 0
+	var builder strings.Builder
+	for _, r := range text {
+		runeWidth := runewidth.RuneWidth(r)
+		if currentWidth+runeWidth > width {
+			break
+		}
+		builder.WriteRune(r)
+		currentWidth += runeWidth
+	}
+	return builder.String()
 }
