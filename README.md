@@ -14,33 +14,33 @@ A lightweight terminal learning tool that docks coding snippets in your terminal
 
 The proxy mode rewrites cursor and scroll-region ANSI sequences so full-screen terminal apps like `vim`, `less`, and CLI agents keep rendering correctly inside the reduced viewport.
 
+## Example snippets
+
+- `MCP (Model Context Protocol)`
+- `Docker`
+- `REST`
+- `Git`
+- `Kubernetes (k8s)`
+
 ## Install
 
-From source with Go:
-
 ```bash
-go install github.com/dev-boz/codesnips/cmd/snips@latest
+git clone https://github.com/dev-boz/codesnips.git
+cd codesnips
+go install ./cmd/snips
+case "$SHELL" in
+  *zsh) rc="$HOME/.zshrc" ;;
+  *bash) rc="$HOME/.bashrc" ;;
+  *) rc="$HOME/.profile" ;;
+esac
+bin_dir="$(go env GOBIN)"
+[ -z "$bin_dir" ] && bin_dir="$(go env GOPATH)/bin"
+printf 'export PATH="%s:$PATH"\n' "$bin_dir" >> "$rc"
+. "$rc"
+snips --version
 ```
 
 Requires Go 1.21+.
-
-From a GitHub release:
-
-1. Download the archive for your platform from [Releases](https://github.com/dev-boz/codesnips/releases).
-2. Extract `snips`.
-3. Move it somewhere on your `PATH`.
-
-Ensure your Go bin directory is on your `PATH`:
-
-```bash
-export PATH="$HOME/go/bin:$PATH"
-```
-
-Check the installed version:
-
-```bash
-snips --version
-```
 
 ## Usage
 
