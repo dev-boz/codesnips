@@ -1,4 +1,10 @@
 .venv/
 __pycache__/
 *.pyc
+/snips
 /snips-proxy
+*.test
+*.tmp
+*.temp
+*.swp
+*~

@@ -1,84 +1,47 @@
 # codesnips
 
-A lightweight terminal learning tool. Get bite-sized coding term snippets while you vibe code.
+A lightweight terminal learning tool with a Go-only CLI.
 
 ## Install
 
 ```bash
-cd /home/dinkum/projects/codesnips
-./install.sh
+go install github.com/dev-boz/codesnips/cmd/snips@latest
 ```
 
-`install.sh` now builds the Unix proxy binary locally, so `go` needs to be on your `PATH`.
+Requires Go 1.25+.
 
-Then add to your shell config (`~/.bashrc` or `~/.zshrc`):
+Ensure your Go bin directory is on your `PATH`:
+
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/go/bin:$PATH"
 ```
-
-Reload: `source ~/.bashrc`
 
 ## Usage
 
 ```bash
 snips                           # Show a random snippet
-snips wrap                      # Proxy your shell inside a PTY with a snippet bar at the bottom
-snips wrap -- codex             # Run a specific CLI inside the proxy
-snips --proxy                   # Alias for snips wrap
-snips --run                     # Dock snippets at the top of the terminal
-snips --run --height 4          # Compact top dock for Codex/Claude style CLIs
-snips --run --dock bottom       # Dock snippets at the bottom instead
-snips --run -i 60 --height 7    # Change interval and dock height
-snips --run --dock none         # Use the old scrolling mode
-snips --stop                    # Stop any background dock
-snips --stop --dock top         # Stop only the top dock
-snips docker                    # Show snippet about docker
+snips docker                    # Show a specific term
 snips --list                    # List all available terms
-snips --search api              # Search for terms containing 'api'
+snips --search api              # Search snippets
+snips wrap                      # Wrap your shell with the snippet bar proxy
+snips wrap -- codex             # Run a specific command inside the proxy
+snips wrap --height 3 --interval 45
 ```
 
-For the "keep this visible while I use another CLI" workflow, run it in the background:
+Use a custom snippets file:
 
 ```bash
-snips --run --dock top --height 4 &
-snips --run --dock bottom &
+snips --file ./snippets.json
+snips wrap --file ./snippets.json
 ```
 
-Proxy mode is the new preferred workflow on Linux/macOS:
+If `--file` is omitted, the CLI loads `./snippets.json` when present, otherwise it falls back to built-in snippets bundled in the binary.
 
-```bash
-snips wrap
-snips wrap --height 4 --interval 45
-snips wrap -- claude
-snips wrap -- vim
-```
+## Proxy mode
 
-`snips wrap` starts your shell or target command inside a PTY with a snippet bar pinned at the bottom of the terminal. It rewrites absolute cursor and scroll-region VT sequences so full-screen apps like Claude, Codex, `vim`, `less`, and `top` render correctly. Terminal scrollback (Shift+PageUp and mouse wheel) works natively because the child viewport starts at row 1.
+`snips wrap` runs your shell or command inside a PTY and keeps the snippets bar pinned at the bottom. The proxy rewrites absolute cursor and scroll-region VT sequences so full-screen terminal apps (for example `vim`, `less`, and CLI agents) continue to render correctly.
 
-`snips --run` remains available as a simpler fallback for split panes, background docks, or cases where you do not want a proxy shell.
+## Notes
 
-Best experience on Windows is still a split pane for now. The proxy architecture is being set up so the ANSI rewriting logic can be reused with ConPTY in a later Windows phase.
-
-## Add Your Own Snippets
-
-Edit `snippets.json` to add more terms:
-
-```json
-{
-  "myterm": {
-    "term": "My Term",
-    "definition": "A clear, concise explanation."
-  }
-}
-```
-
-## Tips
-
-- Use `--dock top` or `--dock bottom` to reserve a fixed area of the terminal
-- Prefer `snips wrap` when you want to run Claude/Codex/vim in the same terminal — scrollback and mouse wheel work natively
-- For Codex specifically, prefer `--dock top --height 4`; it uses the bottom of the screen itself
-- Run `snips --run ... &` before starting Claude, Codex, or another full-screen CLI
-- Use `snips --stop` to kill the background dock after your coding session
-- Run `snips --stop` from the same terminal session to collapse a top dock cleanly
-- Use `--dock none --no-clear` if you want the old scrolling history behavior
-- Create a custom snippets file: `snips -f my-snippets.json`
+- `snips --run` compatibility mode has been removed; use `snips wrap`.
+- The project no longer depends on Python, shell wrapper generation, or CGO.
