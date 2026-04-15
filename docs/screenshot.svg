@@ -1,4 +1,16 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="geminiGradient" x1="88" y1="0" x2="1112" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4796E4"/>
+      <stop offset="50%" stop-color="#847ACE"/>
+      <stop offset="100%" stop-color="#C3677F"/>
+    </linearGradient>
+    <linearGradient id="geminiTextGradient" x1="112" y1="0" x2="930" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4796E4"/>
+      <stop offset="50%" stop-color="#847ACE"/>
+      <stop offset="100%" stop-color="#C3677F"/>
+    </linearGradient>
+  </defs>
   <rect width="1200" height="760" rx="28" fill="#F3EEE6"/>
   <rect x="52" y="46" width="1096" height="668" rx="22" fill="#17181C"/>
   <rect x="52" y="46" width="1096" height="54" rx="22" fill="#23252C"/>
@@ -25,8 +37,7 @@
   <text x="114" y="544" fill="#F4F7FB" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="26">snips wrap -- codex</text>
   <text x="88" y="586" fill="#9AA3B2" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="24">› wrapping your shell or command with a pinned snippet bar</text>
 
-  <rect x="88" y="616" width="1024" height="34" rx="6" fill="#19536B"/>
-  <rect x="88" y="650" width="1024" height="34" rx="6" fill="#BDEBFF"/>
-  <text x="112" y="640" fill="#F9FCFF" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20" font-weight="700">CodeSnips | API (APPLICATION PROGRAMMING INTERFACE)</text>
-  <text x="112" y="674" fill="#111419" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="19">A contract for software to communicate. Like a restaurant menu that tells you what you can order and how.</text>
+  <rect x="88" y="616" width="1024" height="34" rx="6" fill="url(#geminiGradient)"/>
+  <text x="112" y="640" fill="#111419" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20" font-weight="700">CodeSnips | API (APPLICATION PROGRAMMING INTERFACE)</text>
+  <text x="112" y="674" fill="url(#geminiTextGradient)" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="19">A contract for software to communicate. Like a restaurant menu that tells you what you can order and how.</text>
 </svg>
