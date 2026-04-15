@@ -258,5 +258,289 @@
   "error_budget": {
     "term": "Error Budget",
     "definition": "Allowed amount of unreliability. If SLO is 99.9%, you have 43.2 min downtime/month. Spend it wisely."
+  },
+  "iac": {
+    "term": "IaC (Infrastructure as Code)",
+    "definition": "Managing infrastructure via code instead of manual processes. Reproducible, version-controlled, auditable. Tools: Terraform, Pulumi, CloudFormation."
+  },
+  "terraform": {
+    "term": "Terraform",
+    "definition": "HashiCorp's IaC tool. Declarative config files describe desired infrastructure state. Plan before apply = no surprises."
+  },
+  "immutable_infrastructure": {
+    "term": "Immutable Infrastructure",
+    "definition": "Never modify running servers - replace them. Eliminates config drift, makes rollbacks trivial."
+  },
+  "event_driven": {
+    "term": "Event-Driven Architecture",
+    "definition": "Services communicate by emitting and consuming events. Decoupled, scalable. Examples: Kafka, SQS, EventBridge."
+  },
+  "message_queue": {
+    "term": "Message Queue",
+    "definition": "Buffer between producers and consumers. Decouples services, handles traffic spikes. Examples: RabbitMQ, SQS, Kafka."
+  },
+  "pub_sub": {
+    "term": "Pub/Sub (Publish-Subscribe)",
+    "definition": "Messaging pattern: publishers emit events, subscribers receive them. Many-to-many, decoupled. Examples: Kafka, Google Pub/Sub, SNS."
+  },
+  "saga": {
+    "term": "Saga Pattern",
+    "definition": "Manages distributed transactions across microservices. Chain of local transactions with compensating rollbacks on failure."
+  },
+  "cqrs": {
+    "term": "CQRS (Command Query Responsibility Segregation)",
+    "definition": "Separate read and write models. Commands mutate state, queries read it. Enables independent scaling of reads and writes."
+  },
+  "event_sourcing": {
+    "term": "Event Sourcing",
+    "definition": "Store state as a sequence of events, not current values. Replay events to rebuild state. Full audit trail, time travel debugging."
+  },
+  "circuit_breaker": {
+    "term": "Circuit Breaker",
+    "definition": "Stops calling a failing service to prevent cascade failures. States: closed (normal), open (failing), half-open (testing recovery)."
+  },
+  "backpressure": {
+    "term": "Backpressure",
+    "definition": "Signal from consumer to producer to slow down. Prevents overwhelming downstream services. Key concept in reactive systems."
+  },
+  "rate_limiting": {
+    "term": "Rate Limiting",
+    "definition": "Restricts how many requests a client can make in a time window. Protects APIs from abuse and overload."
+  },
+  "throttling": {
+    "term": "Throttling",
+    "definition": "Slowing down requests rather than rejecting them. Gentler than rate limiting - queues excess requests instead of dropping them."
+  },
+  "sharding": {
+    "term": "Sharding",
+    "definition": "Horizontal partitioning of a database. Each shard holds a subset of data. Scales writes beyond a single node."
+  },
+  "replication": {
+    "term": "Replication",
+    "definition": "Copying data across multiple nodes. Primary handles writes, replicas handle reads. Improves availability and read throughput."
+  },
+  "cap_theorem": {
+    "term": "CAP Theorem",
+    "definition": "Distributed systems can guarantee only 2 of 3: Consistency, Availability, Partition tolerance. Network partitions are inevitable, so choose CA or CP."
+  },
+  "eventual_consistency": {
+    "term": "Eventual Consistency",
+    "definition": "Distributed systems guarantee data will converge to same value - eventually. Trades immediate consistency for availability."
+  },
+  "acid": {
+    "term": "ACID",
+    "definition": "Database transaction properties: Atomicity (all or nothing), Consistency (valid state), Isolation (concurrent safety), Durability (persisted)."
+  },
+  "index": {
+    "term": "Database Index",
+    "definition": "Data structure speeding up queries at the cost of write overhead and storage. Like a book's index - fast lookup, extra maintenance."
+  },
+  "n_plus_one": {
+    "term": "N+1 Query Problem",
+    "definition": "Fetching a list then querying each item individually. 1 query + N queries = slow. Fix with eager loading or JOIN."
+  },
+  "connection_pool": {
+    "term": "Connection Pool",
+    "definition": "Reuses database connections instead of creating new ones per request. Reduces latency and DB overhead."
+  },
+  "garbage_collection": {
+    "term": "Garbage Collection",
+    "definition": "Automatic memory management. Runtime reclaims unused memory. Trades manual control for safety. GC pauses can affect latency."
+  },
+  "heap": {
+    "term": "Heap",
+    "definition": "Memory region for dynamic allocation. Objects live here. Managed by GC in most languages. Opposite of stack."
+  },
+  "stack": {
+    "term": "Stack (memory)",
+    "definition": "LIFO memory for function calls and local variables. Fast, auto-managed. Limited size - overflow it and you get a stack overflow."
+  },
+  "deadlock": {
+    "term": "Deadlock",
+    "definition": "Two or more processes waiting on each other forever. Process A holds lock X, wants Y. Process B holds Y, wants X. Neither proceeds."
+  },
+  "semaphore": {
+    "term": "Semaphore",
+    "definition": "Signaling mechanism controlling access to a resource pool. Like a mutex but allows N concurrent holders instead of 1."
+  },
+  "goroutine": {
+    "term": "Goroutine",
+    "definition": "Go's lightweight concurrent function. Cheaper than OS threads - millions can run simultaneously. Communicate via channels."
+  },
+  "channel": {
+    "term": "Channel (Go)",
+    "definition": "Go's typed pipe for goroutine communication. 'Don't communicate by sharing memory; share memory by communicating.'"
+  },
+  "closure": {
+    "term": "Closure",
+    "definition": "Function that captures variables from its enclosing scope. The function 'closes over' those variables."
+  },
+  "currying": {
+    "term": "Currying",
+    "definition": "Transforming a multi-argument function into a chain of single-argument functions. f(a, b) becomes f(a)(b)."
+  },
+  "memoization": {
+    "term": "Memoization",
+    "definition": "Caching function results for given inputs. Call with same args = return cached result. Trades memory for speed."
+  },
+  "big_o": {
+    "term": "Big O Notation",
+    "definition": "Describes algorithm complexity as input grows. O(1) constant, O(log n) logarithmic, O(n) linear, O(n²) quadratic."
+  },
+  "binary_search": {
+    "term": "Binary Search",
+    "definition": "Find item in sorted list by halving search space each step. O(log n). Requires sorted input."
+  },
+  "recursion": {
+    "term": "Recursion",
+    "definition": "Function that calls itself. Needs a base case to stop. Elegant for tree/graph problems. Watch for stack overflow."
+  },
+  "dependency_injection": {
+    "term": "Dependency Injection",
+    "definition": "Pass dependencies in rather than creating them inside. Decouples code, makes testing easy. Core to SOLID's D principle."
+  },
+  "middleware": {
+    "term": "Middleware",
+    "definition": "Code that runs between request and response. Handles auth, logging, rate limiting. Composable pipeline pattern."
+  },
+  "webhook": {
+    "term": "Webhook",
+    "definition": "HTTP callback triggered by an event. Server pushes data to your URL when something happens. Reverse of polling."
+  },
+  "polling": {
+    "term": "Polling",
+    "definition": "Repeatedly asking a server for updates. Simple but inefficient. Replace with webhooks or WebSockets for real-time needs."
+  },
+  "long_polling": {
+    "term": "Long Polling",
+    "definition": "Client sends request, server holds it open until data is available. Simulates push without WebSockets."
+  },
+  "sse": {
+    "term": "SSE (Server-Sent Events)",
+    "definition": "One-way server-to-client streaming over HTTP. Simpler than WebSockets for push-only use cases like live feeds."
+  },
+  "graphql": {
+    "term": "GraphQL",
+    "definition": "Query language for APIs. Clients request exactly the data they need. Solves over-fetching and under-fetching of REST."
+  },
+  "openapi": {
+    "term": "OpenAPI (Swagger)",
+    "definition": "Specification for describing REST APIs. Machine-readable contract enables auto-generated docs, clients, and mocks."
+  },
+  "protobuf": {
+    "term": "Protocol Buffers (protobuf)",
+    "definition": "Google's binary serialization format. Smaller and faster than JSON. Requires schema (.proto file). Used with gRPC."
+  },
+  "regex": {
+    "term": "Regex (Regular Expression)",
+    "definition": "Pattern language for matching text. Powerful but hard to read. Test with regex101.com before shipping."
+  },
+  "cron": {
+    "term": "Cron",
+    "definition": "Unix job scheduler. Cron expression: minute hour day month weekday. '0 2 * * *' = 2am daily."
+  },
+  "daemon": {
+    "term": "Daemon",
+    "definition": "Background process running without user interaction. Starts at boot, runs continuously. Examples: nginx, sshd, systemd services."
+  },
+  "pid": {
+    "term": "PID (Process ID)",
+    "definition": "Unique number assigned to each running process. Use kill <PID> to stop a process. Find with ps or pgrep."
+  },
+  "stdin_stdout": {
+    "term": "stdin/stdout/stderr",
+    "definition": "Standard streams: stdin (input), stdout (output), stderr (errors). Pipe stdout to next command with |. Redirect with > and 2>."
+  },
+  "symlink": {
+    "term": "Symlink (Symbolic Link)",
+    "definition": "File that points to another file or directory. Like a shortcut. ln -s target link_name."
+  },
+  "chmod": {
+    "term": "chmod",
+    "definition": "Change file permissions. chmod 755 = owner rwx, group rx, others rx. chmod +x = make executable."
+  },
+  "tls": {
+    "term": "TLS (Transport Layer Security)",
+    "definition": "Cryptographic protocol securing network communication. Successor to SSL. HTTPS = HTTP over TLS."
+  },
+  "mtls": {
+    "term": "mTLS (Mutual TLS)",
+    "definition": "Both client and server authenticate with certificates. Used in service meshes and zero-trust networks."
+  },
+  "zero_trust": {
+    "term": "Zero Trust",
+    "definition": "Security model: never trust, always verify. No implicit trust based on network location. Every request authenticated and authorized."
+  },
+  "rbac": {
+    "term": "RBAC (Role-Based Access Control)",
+    "definition": "Permissions assigned to roles, roles assigned to users. Easier to manage than per-user permissions."
+  },
+  "oidc": {
+    "term": "OIDC (OpenID Connect)",
+    "definition": "Identity layer on top of OAuth 2.0. OAuth handles authorization; OIDC adds authentication. Returns ID tokens (JWTs)."
+  },
+  "saml": {
+    "term": "SAML",
+    "definition": "XML-based standard for SSO. Enterprise staple. Browser redirects between identity provider and service provider."
+  },
+  "sso": {
+    "term": "SSO (Single Sign-On)",
+    "definition": "Log in once, access multiple apps. Implemented via SAML, OIDC, or OAuth. Reduces password fatigue."
+  },
+  "wasm": {
+    "term": "WebAssembly (Wasm)",
+    "definition": "Binary instruction format running in browsers at near-native speed. Run C, Rust, Go in the browser. Also used server-side."
+  },
+  "edge_computing": {
+    "term": "Edge Computing",
+    "definition": "Processing data near the source rather than a central cloud. Lower latency, less bandwidth. Examples: Cloudflare Workers, Lambda@Edge."
+  },
+  "service_mesh": {
+    "term": "Service Mesh",
+    "definition": "Infrastructure layer handling service-to-service communication. Provides mTLS, retries, circuit breaking, observability. Examples: Istio, Linkerd."
+  },
+  "sidecar": {
+    "term": "Sidecar Pattern",
+    "definition": "Deploy helper container alongside main container. Handles cross-cutting concerns: logging, proxying, auth. Used in service meshes."
+  },
+  "gitops": {
+    "term": "GitOps",
+    "definition": "Git as single source of truth for infrastructure and deployments. Merge to main = deploy. Tools: ArgoCD, Flux."
+  },
+  "trunk_based": {
+    "term": "Trunk-Based Development",
+    "definition": "Everyone commits to main frequently. Short-lived branches or none. Requires feature flags. Enables true CI."
+  },
+  "monorepo": {
+    "term": "Monorepo",
+    "definition": "Single repository for multiple projects/packages. Easier code sharing and atomic changes. Tools: Nx, Turborepo, Bazel."
+  },
+  "bun": {
+    "term": "Bun",
+    "definition": "Fast JavaScript runtime, bundler, and package manager. Drop-in Node.js replacement. Written in Zig."
+  },
+  "deno": {
+    "term": "Deno",
+    "definition": "Secure JavaScript/TypeScript runtime by Node.js creator. No node_modules, built-in TypeScript, permission-based security."
+  },
+  "lsp": {
+    "term": "LSP (Language Server Protocol)",
+    "definition": "Protocol between editors and language tools. Write one language server, works in all editors. Powers autocomplete, go-to-definition."
+  },
+  "ast": {
+    "term": "AST (Abstract Syntax Tree)",
+    "definition": "Tree representation of source code structure. Used by compilers, linters, and code formatters to analyze and transform code."
+  },
+  "transpiler": {
+    "term": "Transpiler",
+    "definition": "Compiles source code to another language at similar abstraction level. TypeScript → JavaScript, Babel ES2024 → ES5."
+  },
+  "tree_shaking": {
+    "term": "Tree Shaking",
+    "definition": "Dead code elimination in bundlers. Removes unused exports. Requires ES modules (import/export, not require)."
+  },
+  "hot_reload": {
+    "term": "Hot Reload / HMR",
+    "definition": "Update running app without full restart. Browser reflects code changes instantly. Preserves state. Standard in modern dev servers."
   }
 }
