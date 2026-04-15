@@ -1,3 +1,5 @@
+//go:build linux
+
 package pty
 
 import (
@@ -25,6 +27,10 @@ type TerminalMode struct {
 
 type terminalState struct {
 	termios unix.Termios
+}
+
+func Supported() bool {
+	return true
 }
 
 func Start(argv []string, rows, cols int) (*Child, error) {

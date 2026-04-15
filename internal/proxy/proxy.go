@@ -1,3 +1,5 @@
+//go:build linux
+
 package proxy
 
 import (
@@ -79,6 +81,9 @@ func Run(config Config) (int, error) {
 	}
 	if !config.HeaderStyle.Valid() {
 		return 1, fmt.Errorf("unsupported header style %q", config.HeaderStyle)
+	}
+	if !pty.Supported() {
+		return 2, errors.New("snips wrap is currently supported on Linux only")
 	}
 
 	if !pty.IsTTY(os.Stdin.Fd()) || !pty.IsTTY(os.Stdout.Fd()) {

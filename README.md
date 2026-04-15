@@ -70,6 +70,8 @@ If `--file` is omitted, the CLI loads `./snippets.json` when present, otherwise 
 
 `snips wrap` runs your shell or command inside a PTY and keeps the snippets bar pinned at the bottom. The proxy rewrites absolute cursor and scroll-region VT sequences so full-screen terminal apps (for example `vim`, `less`, and CLI agents) continue to render correctly.
 
+`snips wrap` is currently supported on Linux only. The regular snippet commands (`snips`, `snips --list`, `snips --search`, etc.) work across the release binaries for Linux, macOS, and Windows.
+
 Header styles:
 
 - `--header-style solid` renders the header as a full-width gradient background with black text. This is now the default.
@@ -81,6 +83,7 @@ Header styles:
 - Tags follow SemVer: `vMAJOR.MINOR.PATCH`.
 - Pushing a `v*` tag triggers the release workflow in GitHub Actions.
 - Release artifacts include prebuilt binaries for Linux, macOS, and Windows, plus a checksum file.
+- The proxy mode (`snips wrap`) is currently Linux-only.
 
 ## Development
 
