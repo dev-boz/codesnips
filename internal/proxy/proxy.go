@@ -30,8 +30,9 @@ type Config struct {
 type HeaderStyle string
 
 const (
-	HeaderStyleText  HeaderStyle = "text"
-	HeaderStyleSolid HeaderStyle = "solid"
+	HeaderStyleText    HeaderStyle = "text"
+	HeaderStyleSolid   HeaderStyle = "solid"
+	DefaultHeaderStyle             = HeaderStyleSolid
 )
 
 type exitStatus struct {
@@ -74,7 +75,7 @@ func Run(config Config) (int, error) {
 		config.Interval = 30 * time.Second
 	}
 	if config.HeaderStyle == "" {
-		config.HeaderStyle = HeaderStyleText
+		config.HeaderStyle = DefaultHeaderStyle
 	}
 	if !config.HeaderStyle.Valid() {
 		return 1, fmt.Errorf("unsupported header style %q", config.HeaderStyle)

@@ -162,3 +162,11 @@ func TestRenderHeaderLineReversesGradientDirection(t *testing.T) {
 		t.Fatalf("reversed header did not start from the final palette color: %q", got)
 	}
 }
+
+func TestDefaultHeaderStyleIsSolid(t *testing.T) {
+	t.Parallel()
+
+	if DefaultHeaderStyle != HeaderStyleSolid {
+		t.Fatalf("DefaultHeaderStyle = %q, want %q", DefaultHeaderStyle, HeaderStyleSolid)
+	}
+}

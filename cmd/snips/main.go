@@ -119,7 +119,7 @@ func runWrap(args []string) int {
 	flags.IntVar(&intervalSecs, "interval", int(defaultInterval.Seconds()), "snippet rotation interval in seconds")
 	flags.StringVar(&snippetsFile, "snippets-file", "", "path to snippets JSON file")
 	flags.StringVar(&snippetsFile, "file", "", "path to snippets JSON file")
-	flags.StringVar(&headerStyle, "header-style", string(proxy.HeaderStyleText), "header style: text or solid")
+	flags.StringVar(&headerStyle, "header-style", string(proxy.DefaultHeaderStyle), "header style: text or solid (default: solid)")
 	flags.BoolVar(&headerReverse, "header-reverse", false, "reverse the header gradient direction")
 
 	if err := flags.Parse(args); err != nil {

@@ -72,8 +72,8 @@ If `--file` is omitted, the CLI loads `./snippets.json` when present, otherwise 
 
 Header styles:
 
-- `--header-style text` keeps the current Gemini-style gradient text header.
-- `--header-style solid` renders the header as a full-width gradient background with black text.
+- `--header-style solid` renders the header as a full-width gradient background with black text. This is now the default.
+- `--header-style text` keeps the Gemini-style gradient text header.
 - `--header-reverse` flips the header gradient direction without changing the body line.
 
 ## Releases
