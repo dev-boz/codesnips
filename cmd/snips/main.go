@@ -13,6 +13,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/dev-boz/codesnips/internal/proxy"
 	"github.com/dev-boz/codesnips/internal/snippets"
+	"github.com/dev-boz/codesnips/internal/theme"
 )
 
 const (
@@ -105,9 +106,11 @@ func runDefault(args []string) int {
 
 func runWrap(args []string) int {
 	var (
-		barHeight    int
-		intervalSecs int
-		snippetsFile string
+		barHeight     int
+		intervalSecs  int
+		snippetsFile  string
+		headerStyle   string
+		headerReverse bool
 	)
 
 	flags := flag.NewFlagSet("snips wrap", flag.ContinueOnError)
@@ -116,6 +119,8 @@ func runWrap(args []string) int {
 	flags.IntVar(&intervalSecs, "interval", int(defaultInterval.Seconds()), "snippet rotation interval in seconds")
 	flags.StringVar(&snippetsFile, "snippets-file", "", "path to snippets JSON file")
 	flags.StringVar(&snippetsFile, "file", "", "path to snippets JSON file")
+	flags.StringVar(&headerStyle, "header-style", string(proxy.HeaderStyleText), "header style: text or solid")
+	flags.BoolVar(&headerReverse, "header-reverse", false, "reverse the header gradient direction")
 
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -132,6 +137,13 @@ func runWrap(args []string) int {
 		return 1
 	}
 
+	resolvedHeaderStyle := proxy.HeaderStyle(strings.ToLower(strings.TrimSpace(headerStyle)))
+	if !resolvedHeaderStyle.Valid() {
+		fmt.Fprintf(os.Stderr, "invalid --header-style %q (expected: text or solid)\n", headerStyle)
+		printWrapUsage()
+		return 2
+	}
+
 	command := flags.Args()
 	if len(command) == 0 {
 		command = []string{defaultShell()}
@@ -142,6 +154,8 @@ func runWrap(args []string) int {
 		Command:         command,
 		RequestedHeight: barHeight,
 		Interval:        time.Duration(max(1, intervalSecs)) * time.Second,
+		HeaderStyle:     resolvedHeaderStyle,
+		HeaderReverse:   headerReverse,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "snips wrap failed: %v\n", err)
@@ -173,7 +187,7 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
 	fmt.Fprintln(os.Stderr, "  snips [--version]")
 	fmt.Fprintln(os.Stderr, "  snips [--file PATH] [--list | --search QUERY | TERM]")
-	fmt.Fprintln(os.Stderr, "  snips wrap [--height N] [--interval SECONDS] [--file PATH] [-- command ...]")
+	fmt.Fprintln(os.Stderr, "  snips wrap [--height N] [--interval SECONDS] [--header-style text|solid] [--header-reverse] [--file PATH] [-- command ...]")
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "Examples:")
 	fmt.Fprintln(os.Stderr, "  snips --version")
@@ -182,19 +196,21 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  snips --list")
 	fmt.Fprintln(os.Stderr, "  snips --search api")
 	fmt.Fprintln(os.Stderr, "  snips wrap -- codex")
+	fmt.Fprintln(os.Stderr, "  snips wrap --header-style solid --header-reverse -- codex")
 }
 
 func printWrapUsage() {
-	fmt.Fprintln(os.Stderr, "Usage: snips wrap [--height N] [--interval SECONDS] [--file PATH] [-- command ...]")
+	fmt.Fprintln(os.Stderr, "Usage: snips wrap [--height N] [--interval SECONDS] [--header-style text|solid] [--header-reverse] [--file PATH] [-- command ...]")
 }
 
 func renderPanel(term, definition string) {
-	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("228")).Render("CodeSnips") +
-		lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("45")).Render(" "+term)
+	palette := theme.Default()
+	titleText := "CodeSnips " + term
+	title := theme.RenderLipgloss(titleText, palette.Colors, true)
 	body := lipgloss.NewStyle().Foreground(lipgloss.Color("252")).Render(definition)
 	panel := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("63")).
+		BorderForeground(lipgloss.Color(theme.AccentColor(palette.Colors))).
 		Padding(0, 1).
 		Render(title + "\n" + body)
 

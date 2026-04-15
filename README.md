@@ -53,6 +53,8 @@ snips --search api              # Search snippets
 snips wrap                      # Wrap your shell with the snippet bar proxy
 snips wrap -- codex             # Run a specific command inside the proxy
 snips wrap --height 3 --interval 45
+snips wrap --header-style solid -- codex
+snips wrap --header-style solid --header-reverse -- codex
 ```
 
 Use a custom snippets file:
@@ -67,6 +69,12 @@ If `--file` is omitted, the CLI loads `./snippets.json` when present, otherwise 
 ## Proxy mode
 
 `snips wrap` runs your shell or command inside a PTY and keeps the snippets bar pinned at the bottom. The proxy rewrites absolute cursor and scroll-region VT sequences so full-screen terminal apps (for example `vim`, `less`, and CLI agents) continue to render correctly.
+
+Header styles:
+
+- `--header-style text` keeps the current Gemini-style gradient text header.
+- `--header-style solid` renders the header as a full-width gradient background with black text.
+- `--header-reverse` flips the header gradient direction without changing the body line.
 
 ## Releases
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/dev-boz/codesnips/internal/ansi"
 	"github.com/dev-boz/codesnips/internal/snippets"
+	"github.com/dev-boz/codesnips/internal/theme"
 )
 
 func TestDrawBarRestoresCustomScrollRegion(t *testing.T) {
@@ -25,7 +26,7 @@ func TestDrawBarRestoresCustomScrollRegion(t *testing.T) {
 		childRows:      4,
 		tracker:        tracker,
 		currentSnippet: snippets.Item{Term: "git", Definition: "Distributed version control"},
-		currentTheme:   colorThemes[0],
+		currentTheme:   theme.Default(),
 	}
 
 	if err := proxy.drawBar(); err != nil {
@@ -93,7 +94,7 @@ func TestRenderBarHeaderRemovesExitHint(t *testing.T) {
 		cols:           30,
 		barHeight:      1,
 		currentSnippet: snippets.Item{Term: "codex", Definition: "CLI agent"},
-		currentTheme:   colorThemes[0],
+		currentTheme:   theme.Default(),
 	}
 
 	lines := proxy.renderBar()
@@ -102,5 +103,62 @@ func TestRenderBarHeaderRemovesExitHint(t *testing.T) {
 	}
 	if strings.Contains(lines[0], "exit to leave proxy") {
 		t.Fatalf("renderBar kept the outdated exit hint: %q", lines[0])
+	}
+}
+
+func TestNextSnippetCyclesThemesInOrder(t *testing.T) {
+	t.Parallel()
+
+	store, err := snippets.Load("")
+	if err != nil {
+		t.Fatalf("Load(): %v", err)
+	}
+
+	proxy := &instance{store: store}
+	palettes := theme.Catalog()
+
+	proxy.nextSnippet()
+	if proxy.currentTheme.Name != palettes[0].Name {
+		t.Fatalf("first theme = %q, want %q", proxy.currentTheme.Name, palettes[0].Name)
+	}
+
+	proxy.nextSnippet()
+	if proxy.currentTheme.Name != palettes[1].Name {
+		t.Fatalf("second theme = %q, want %q", proxy.currentTheme.Name, palettes[1].Name)
+	}
+}
+
+func TestRenderBarSolidHeaderUsesBackgroundGradient(t *testing.T) {
+	t.Parallel()
+
+	proxy := &instance{
+		cols:           30,
+		barHeight:      2,
+		currentSnippet: snippets.Item{Term: "codex", Definition: "CLI agent"},
+		currentTheme:   theme.Default(),
+		headerStyle:    HeaderStyleSolid,
+	}
+
+	lines := proxy.renderBar()
+	if len(lines) != 2 {
+		t.Fatalf("renderBar returned %d lines, want 2", len(lines))
+	}
+	if !strings.Contains(lines[0], "48;2;") {
+		t.Fatalf("header line did not use a background gradient: %q", lines[0])
+	}
+	if !strings.Contains(lines[0], "38;2;0;0;0") {
+		t.Fatalf("header line did not use black text: %q", lines[0])
+	}
+	if strings.Contains(lines[1], "48;2;") {
+		t.Fatalf("definition line unexpectedly used a background gradient: %q", lines[1])
+	}
+}
+
+func TestRenderHeaderLineReversesGradientDirection(t *testing.T) {
+	t.Parallel()
+
+	got := renderHeaderLine(" CodeSnips ", theme.Default().Colors, HeaderStyleText, true)
+	if !strings.Contains(got, " \x1b[38;2;195;103;127mC") {
+		t.Fatalf("reversed header did not start from the final palette color: %q", got)
 	}
 }

@@ -14,31 +14,25 @@ import (
 	"github.com/dev-boz/codesnips/internal/ansi"
 	"github.com/dev-boz/codesnips/internal/pty"
 	"github.com/dev-boz/codesnips/internal/snippets"
+	"github.com/dev-boz/codesnips/internal/theme"
 	"github.com/mattn/go-runewidth"
 )
-
-var colorThemes = []colorTheme{
-	{headerBG: "48;5;25", headerFG: "38;5;231", bodyBG: "48;5;159", bodyFG: "38;5;16"},
-	{headerBG: "48;5;88", headerFG: "38;5;230", bodyBG: "48;5;223", bodyFG: "38;5;16"},
-	{headerBG: "48;5;22", headerFG: "38;5;230", bodyBG: "48;5;157", bodyFG: "38;5;16"},
-	{headerBG: "48;5;60", headerFG: "38;5;231", bodyBG: "48;5;189", bodyFG: "38;5;16"},
-	{headerBG: "48;5;130", headerFG: "38;5;230", bodyBG: "48;5;223", bodyFG: "38;5;16"},
-	{headerBG: "48;5;24", headerFG: "38;5;230", bodyBG: "48;5;117", bodyFG: "38;5;16"},
-}
 
 type Config struct {
 	Store           *snippets.Store
 	Command         []string
 	RequestedHeight int
 	Interval        time.Duration
+	HeaderStyle     HeaderStyle
+	HeaderReverse   bool
 }
 
-type colorTheme struct {
-	headerBG string
-	headerFG string
-	bodyBG   string
-	bodyFG   string
-}
+type HeaderStyle string
+
+const (
+	HeaderStyleText  HeaderStyle = "text"
+	HeaderStyleSolid HeaderStyle = "solid"
+)
 
 type exitStatus struct {
 	status syscall.WaitStatus
@@ -58,7 +52,10 @@ type instance struct {
 	childRows       int
 	store           *snippets.Store
 	currentSnippet  snippets.Item
-	currentTheme    colorTheme
+	currentTheme    theme.Palette
+	currentThemeIdx int
+	headerStyle     HeaderStyle
+	headerReverse   bool
 	altSavedRow     int
 	altSavedCol     int
 	tracker         *ansi.Tracker
@@ -75,6 +72,12 @@ func Run(config Config) (int, error) {
 	}
 	if config.Interval <= 0 {
 		config.Interval = 30 * time.Second
+	}
+	if config.HeaderStyle == "" {
+		config.HeaderStyle = HeaderStyleText
+	}
+	if !config.HeaderStyle.Valid() {
+		return 1, fmt.Errorf("unsupported header style %q", config.HeaderStyle)
 	}
 
 	if !pty.IsTTY(os.Stdin.Fd()) || !pty.IsTTY(os.Stdout.Fd()) {
@@ -100,7 +103,16 @@ func Run(config Config) (int, error) {
 	}
 	defer mode.Restore()
 
-	proxy := newInstance(child.Master, child.PID, int(os.Stdin.Fd()), os.Stdout, config.RequestedHeight, config.Store)
+	proxy := newInstance(
+		child.Master,
+		child.PID,
+		int(os.Stdin.Fd()),
+		os.Stdout,
+		config.RequestedHeight,
+		config.Store,
+		config.HeaderStyle,
+		config.HeaderReverse,
+	)
 	proxy.updateLayout(rows, cols)
 	proxy.nextSnippet()
 	if err := proxy.initializeTerminal(); err != nil {
@@ -191,7 +203,16 @@ loop:
 	return 0, nil
 }
 
-func newInstance(master *os.File, childPID int, stdinFD int, stdout io.Writer, requestedHeight int, store *snippets.Store) *instance {
+func newInstance(
+	master *os.File,
+	childPID int,
+	stdinFD int,
+	stdout io.Writer,
+	requestedHeight int,
+	store *snippets.Store,
+	headerStyle HeaderStyle,
+	headerReverse bool,
+) *instance {
 	return &instance{
 		masterFile:      master,
 		childPID:        childPID,
@@ -199,6 +220,8 @@ func newInstance(master *os.File, childPID int, stdinFD int, stdout io.Writer, r
 		stdout:          stdout,
 		requestedHeight: max(0, requestedHeight),
 		store:           store,
+		headerStyle:     headerStyle,
+		headerReverse:   headerReverse,
 	}
 }
 
@@ -233,7 +256,14 @@ func (p *instance) updateLayout(rows, cols int) {
 
 func (p *instance) nextSnippet() {
 	p.currentSnippet = p.store.Next()
-	p.currentTheme = colorThemes[p.store.Intn(len(colorThemes))]
+	palettes := theme.Catalog()
+	if len(p.currentTheme.Colors) == 0 {
+		p.currentTheme = palettes[0]
+		p.currentThemeIdx = 0
+		return
+	}
+	p.currentThemeIdx = (p.currentThemeIdx + 1) % len(palettes)
+	p.currentTheme = palettes[p.currentThemeIdx]
 }
 
 func (p *instance) saveAltCursor() {
@@ -314,13 +344,13 @@ func (p *instance) renderBar() []string {
 	bodyRows := max(0, p.barHeight-1)
 	lines := make([]string, 0, p.barHeight)
 
-	lines = append(lines, colorLine(header, p.currentTheme.headerBG, p.currentTheme.headerFG))
+	lines = append(lines, renderHeaderLine(header, p.currentTheme.Colors, p.headerStyle, p.headerReverse))
 	for i := 0; i < bodyRows; i++ {
 		text := ""
 		if i < len(definitionLines) {
 			text = "  " + definitionLines[i]
 		}
-		lines = append(lines, colorLine(fitWidth(text, p.cols), p.currentTheme.bodyBG, p.currentTheme.bodyFG))
+		lines = append(lines, gradientLine(fitWidth(text, p.cols), p.currentTheme.Colors))
 	}
 	return lines
 }
@@ -403,8 +433,27 @@ func readPTY(src *os.File, out chan<- []byte) {
 	}
 }
 
-func colorLine(text, bg, fg string) string {
-	return fmt.Sprintf("\x1b[%s;%sm%s\x1b[0m", bg, fg, text)
+func gradientLine(text string, colors []theme.RGB) string {
+	return theme.RenderANSI(text, colors)
+}
+
+func renderHeaderLine(text string, colors []theme.RGB, style HeaderStyle, reverse bool) string {
+	if reverse {
+		colors = theme.Reverse(colors)
+	}
+	if style == HeaderStyleSolid {
+		return theme.RenderANSIBackground(text, colors, theme.Black())
+	}
+	return gradientLine(text, colors)
+}
+
+func (s HeaderStyle) Valid() bool {
+	switch s {
+	case HeaderStyleText, HeaderStyleSolid:
+		return true
+	default:
+		return false
+	}
 }
 
 func fitWidth(text string, width int) string {
